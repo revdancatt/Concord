@@ -1,4 +1,16 @@
-const page = {
+/* global fxrand Line Blob */
+
+const PAPER = { // eslint-disable-line no-unused-vars
+  A1: [59.4, 84.1],
+  A2: [42.0, 59.4],
+  A3: [29.7, 42.0],
+  A4: [21.0, 29.7],
+  A5: [14.8, 21.0],
+  A6: [10.5, 14.8]
+}
+
+const page = { // eslint-disable-line no-unused-vars
+  dpi: 300,
   translate: (lines, x, y) => {
     lines.forEach((line) => {
       line.points.forEach((point) => {
@@ -53,5 +65,41 @@ const page = {
       newLines.push(newLine)
     })
     return newLines
+  },
+
+  wrapSVG: (lines, size, filename) => {
+    let output = `<?xml version="1.0" standalone="no" ?>
+    <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+        "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+        <svg version="1.1" id="lines" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        x="0" y="0"
+        viewBox="0 0 ${size[0]} ${size[1]}"
+        width="${size[0]}cm"
+        height="${size[1]}cm" 
+        xml:space="preserve">`
+
+    output += `
+        <g>
+        <path d="`
+    lines.forEach((line) => {
+      const points = line.getPoints()
+      output += `M ${points[0].x * size[0]} ${points[0].y * size[1]} `
+      for (let p = 1; p < points.length; p++) {
+        output += `L ${points[p].x * size[0]} ${points[p].y * size[1]} `
+      }
+    })
+    output += `"  fill="none" stroke="black" stroke-width="0.05"/>
+      </g>`
+    output += '</svg>'
+
+    var element = document.createElement('a')
+    element.setAttribute('download', `${filename}.svg`)
+    element.style.display = 'none'
+    document.body.appendChild(element)
+    element.setAttribute('href', window.URL.createObjectURL(new Blob([output], {
+      type: 'text/plain;charset=utf-8'
+    })))
+    element.click()
+    document.body.removeChild(element)
   }
 }

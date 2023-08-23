@@ -1,0 +1,27 @@
+{
+  "name": "concord",
+  "version": "1.0.1",
+  "description": "An updated version of Concord",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://revdancatt@github.com/revdancatt/Concord.git"
+  },
+  "keywords": [
+    "genartclub",
+    "fxhash",
+    "revdancatt"
+  ],
+  "author": "revdancatt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/revdancatt/Concord/issues"
+  },
+  "homepage": "https://github.com/revdancatt/Concord#readme",
+  "devDependencies": {
+    "standard": "^17.1.0"
+  }
+}

@@ -1,4 +1,4 @@
-/* global preloadImagesTmr $fx fxhash fxrand */
+/* global preloadImagesTmr $fx fxpreview Line PAPER page fxhash fxrand */
 //
 //  fxhash - An Increasing Series of Dots
 //
@@ -17,46 +17,52 @@
 //  https://youtube.com/revdancatt
 //
 
-const ratio = 1.41
-// const startTime = new Date().getTime() // so we can figure out how long since the scene started
-let drawn = false
+// Global values, because today I'm being an artist not an engineer!
+// These are the generally common values we'll use across our projects
+const ratio = 1.41 // canvas ratio
+const features = {} // A global object to hold all the features we'll use in the draw stage
+let nextFrame = null // requestAnimationFrame, and the ability to clear it
+let resizeTmr = null // a timer to make sure we don't resize too often
 let highRes = false // display high or low res
-const features = {}
-const nextFrame = null
-let resizeTmr = null
-let thumbnailTaken = false
-const dumpOutputs = false
+let thumbnailTaken = false // have we taken a thumbnail yet, so we don't take another
+let forceDownloaded = false // are we forcing a download?
 const urlSearchParams = new URLSearchParams(window.location.search)
 const urlParams = Object.fromEntries(urlSearchParams.entries())
+const prefix = 'Concord'
+// dumpOutputs will be set to false unless we have ?dumpOutputs=true in the URL
+const dumpOutputs = urlParams.dumpOutputs === 'true'
 
-window.$fxhashFeatures = {}
-
+// These are custom values for this project
 const palette = {
-  'Black': '#000000',
-  'Green': '#ECF3EB',
-  'Blue': '#EEF5F5',
-  'Pink': '#F3EAF3',
-  'Parchment': '#F5C976',
+  Black: '#000000',
+  Green: '#ECF3EB',
+  Blue: '#EEF5F5',
+  Pink: '#F3EAF3',
+  Parchment: '#F5C976',
   'Off White': '#EEEEEE',
-  'White': '#FFFFFF'
+  White: '#FFFFFF'
 }
 
 const linePalette = {
-  'Black': '#000000',
-  'Ink': '#3D1D12',
-  'Wash': '#605A5C',
+  Black: '#000000',
+  Ink: '#3D1D12',
+  Wash: '#605A5C',
   'Off White': '#EEEEEE'
 }
 
 const dotPalette = {
-  'Red': '#D72A0C',
+  Red: '#D72A0C',
   'Bright Red': '#FF0000',
-  'Yellow': '#F5C976'
+  Yellow: '#F5C976'
 }
 
-//  Work out what all our features are
-const makeFeatures = () => {
+//  We need this to display features in fxhash
+window.$fxhashFeatures = {}
 
+// This is where we decide what everything is going to look like and where it's all going
+// to go. We run this once at the start and then never again, all the random number generation
+// happens in here, after this we don't touch random numbers again.
+const makeFeatures = () => {
   let outOfBounds = true
   while (outOfBounds) {
     outOfBounds = false
@@ -169,7 +175,7 @@ const makeFeatures = () => {
             h: hh,
             v: vv
           }
-          thisDot.radiusMod = (0.25 * Math.ceil(fxrand() * 4)) * .5
+          thisDot.radiusMod = (0.25 * Math.ceil(fxrand() * 4)) * 0.5
           features.dots.push(thisDot)
         }
       }
@@ -179,7 +185,7 @@ const makeFeatures = () => {
     features.allLines = []
     for (let h = 1; h <= features.hLines; h++) {
       if (features.hLinesHolder[h - 1]) {
-        for (l = 1; l <= 5; l++) {
+        for (let l = 1; l <= 5; l++) {
           const line = new Line()
           line.addPoint(0, 1 / (features.hLines + 1) * h)
           line.addPoint(1, 1 / (features.hLines + 1) * h)
@@ -189,7 +195,7 @@ const makeFeatures = () => {
     }
     for (let v = 1; v <= features.vLines; v++) {
       if (features.vLinesHolder[v - 1]) {
-        for (l = 1; l <= 5; l++) {
+        for (let l = 1; l <= 5; l++) {
           const line = new Line()
           line.addPoint(1 / (features.vLines + 1) * v, 0)
           line.addPoint(1 / (features.vLines + 1) * v, 1)
@@ -253,8 +259,8 @@ const makeFeatures = () => {
 
       for (let y = -roundRadius; y < roundRadius; y += step) {
         const x = Math.sqrt((roundRadius * roundRadius) - (y * y))
-        let startX = -x
-        let endX = x
+        const startX = -x
+        const endX = x
         const line = new Line()
         line.addPoint(startX, y / ratio)
         line.addPoint(endX, y / ratio)
@@ -263,8 +269,8 @@ const makeFeatures = () => {
 
       for (let x = -roundRadius; x < roundRadius; x += step) {
         const y = Math.sqrt((roundRadius * roundRadius) - (x * x))
-        let startY = -y
-        let endY = y
+        const startY = -y
+        const endY = y
         const line = new Line()
         line.addPoint(x, startY / ratio)
         line.addPoint(x, endY / ratio)
@@ -276,7 +282,7 @@ const makeFeatures = () => {
       features.allDots = [...features.allDots, ...dotLines]
     })
 
-    //Check to see if any lines are out of bounds
+    // Check to see if any lines are out of bounds
     features.allLines.forEach((line) => {
       line.points.forEach((point) => {
         if (point.x < 0 || point.x > 1) outOfBounds = true
@@ -341,7 +347,8 @@ const makeFeatures = () => {
   }
   if (features.backgroundColour === 'Special') features.lineColour = 'Black'
 
-  const circleColour = fxrand()
+  // We need this next fxrand() to keep it in line with the original code
+  fxrand()
   features.circleColour = features.lineColour
   if (features.backgroundColour === 'Black') {
     features.circleColour = 'Off White'
@@ -370,11 +377,13 @@ const makeFeatures = () => {
     features.backgroundColour += ' Gradient'
   }
 
+  // For fxhash we need to put the human readable features into a global variable
+  // on the window object so that the fxhash script can access them.
   window.$fxhashFeatures = {
-    'Mood': 'Calm',
-    'Season': 'Summer',
-    'Tension': 'Relaxed',
-    'Background': features.backgroundColour,
+    Mood: 'Calm',
+    Season: 'Summer',
+    Tension: 'Relaxed',
+    Background: features.backgroundColour,
     'Line colour': features.lineColour,
     'Circle colour': features.circleColour
   }
@@ -383,8 +392,8 @@ const makeFeatures = () => {
   }
 
   if (features.totalLines <= 2) window.$fxhashFeatures.Mood = 'Harmony'
-  if (features.totalLines == 3) window.$fxhashFeatures.Mood = 'Tranquility'
-  if (features.totalLines == 6) window.$fxhashFeatures.Mood = 'Shelter'
+  if (features.totalLines === 3) window.$fxhashFeatures.Mood = 'Tranquility'
+  if (features.totalLines === 6) window.$fxhashFeatures.Mood = 'Shelter'
   if (features.totalLines >= 7) window.$fxhashFeatures.Mood = 'Sanctuary'
 
   if (features.circles.length < 4) window.$fxhashFeatures.Season = 'Autumn'
@@ -394,105 +403,43 @@ const makeFeatures = () => {
   if (features.circles.length === 1 && features.wholeCircles === 1) window.$fxhashFeatures.Moon = 'Full'
   if (features.circles.length === features.wholeCircles && features.wholeCircles > 1) window.$fxhashFeatures.Tension = 'Balance'
 }
-
-//  Call the above make features, so we'll have the window.$fxhashFeatures available
-//  for fxhash
+// Call makeFeatures() right away, because we want to do this as soon as possible
 makeFeatures()
+console.table(window.$fxhashFeatures)
 
-const init = async () => {
-  //  I should add a timer to this, but really how often to people who aren't
-  //  the developer resize stuff all the time. Stick it in a digital frame and
-  //  have done with it!
-  window.addEventListener('resize', async () => {
-    //  If we do resize though, work out the new size...
-    clearTimeout(resizeTmr)
-    resizeTmr = setTimeout(async () => {
-      await layoutCanvas()
-    }, 100)
-  })
-
-  //  Now layout the canvas
-  await layoutCanvas()
-}
-
-const layoutCanvas = async () => {
-  //  Kill the next animation frame
-  window.cancelAnimationFrame(nextFrame)
-
-  const wWidth = window.innerWidth
-  const wHeight = window.innerHeight
-  let cWidth = wWidth
-  let cHeight = cWidth * ratio
-  if (cHeight > wHeight) {
-    cHeight = wHeight
-    cWidth = wHeight / ratio
-  }
-  // Grab any canvas elements so we can delete them
-  const canvases = document.getElementsByTagName('canvas')
-  for (let i = 0; i < canvases.length; i++) {
-    canvases[i].remove()
-  }
-  //  Now create a new canvas with the id "target" and attach it to the body
-  const newCanvas = document.createElement('canvas')
-  newCanvas.id = 'target'
-  // Attach it to the body
-  document.body.appendChild(newCanvas)
-
-  let targetHeight = 4096
-  if (!highRes) targetHeight /= 2
-  let targetWidth = targetHeight / ratio
-  let dpr = window.devicePixelRatio || 1
-
-  //  If the alba params are forcing the width, then use that
-  if (window && window.alba && window.alba.params && window.alba.params.width) {
-    targetWidth = window.alba.params.width
-    targetHeight = Math.floor(targetWidth * ratio)
-  }
-
-  // If *I* am forcing the width, then use that
-  if ('forceWidth' in urlParams) {
-    targetWidth = parseInt(urlParams.forceWidth)
-    targetHeight = Math.floor(targetWidth * ratio)
-    dpr = 1
-  }
-
-  // Set the size and position of the canvas
-  const canvas = document.getElementById('target')
-  canvas.height = targetHeight
-  canvas.width = targetWidth
-  canvas.style.position = 'absolute'
-  canvas.style.width = `${cWidth}px`
-  canvas.style.height = `${cHeight}px`
-  canvas.style.left = `${(wWidth - cWidth) / 2}px`
-  canvas.style.top = `${(wHeight - cHeight) / 2}px`
-
-  //  And draw it!!
-  drawCanvas()
-}
-
-const drawCanvas = () => {
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// Custom drawing code goes here. By this point everything that will be drawn
+// has been decided, so we just need to draw it.
+//
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+const drawCanvas = async () => {
   const canvas = document.getElementById('target')
   const ctx = canvas.getContext('2d')
   if (features.backgroundColour === 'Special' || features.backgroundColour.includes('Gradient')) {
     const grd = ctx.createLinearGradient(0, 0, 0, canvas.height)
     if (features.backgroundColour.includes('Gradient')) {
       grd.addColorStop(1, palette[features.backgroundColour.replace(' Gradient', '')])
-      grd.addColorStop(0, "white")
+      grd.addColorStop(0, 'white')
     } else {
       if (features.backgroundSpecial > 0.75) {
-        grd.addColorStop(1, "black")
-        grd.addColorStop(0, "white")
+        grd.addColorStop(1, 'black')
+        grd.addColorStop(0, 'white')
         window.$fxhashFeatures.Background = '80s'
       }
       if (features.backgroundSpecial <= 0.75 && features.backgroundSpecial > 0.25) {
-        grd.addColorStop(1, "#E4904E");
-        grd.addColorStop(0.5, "#D3C7A5")
-        grd.addColorStop(0, "#748D78")
+        grd.addColorStop(1, '#E4904E')
+        grd.addColorStop(0.5, '#D3C7A5')
+        grd.addColorStop(0, '#748D78')
         window.$fxhashFeatures.Background = 'World on Fire'
       }
       if (features.backgroundSpecial <= 0.25) {
-        grd.addColorStop(1, "#91DEF7");
-        grd.addColorStop(0, "#F690EC")
+        grd.addColorStop(1, '#91DEF7')
+        grd.addColorStop(0, '#F690EC')
         window.$fxhashFeatures.Background = 'Summertime'
       }
     }
@@ -537,32 +484,164 @@ const drawCanvas = () => {
     ctx.stroke()
   })
 
-  if ('forceDownload' in urlParams) {
-    autoDownloadCanvas()
+  // Try various methods to tell the parent window that we've drawn something
+  if (!thumbnailTaken) {
+    try {
+      $fx.preview()
+    } catch (e) {
+      try {
+        fxpreview()
+      } catch (e) {
+      }
+    }
+    thumbnailTaken = true
+  }
+
+  // If we are forcing download, then do that now
+  if (dumpOutputs || ('forceDownload' in urlParams && forceDownloaded === false)) {
+    forceDownloaded = 'forceDownload' in urlParams
+    await autoDownloadCanvas()
+    // Tell the parent window that we have downloaded
+    window.parent.postMessage('forceDownloaded', '*')
+  } else {
+    //  We should wait for the next animation frame here
+    nextFrame = window.requestAnimationFrame(drawCanvas)
   }
 }
 
-const autoDownloadCanvas = async (showHash = false) => {
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// These are the common functions that are used by the canvas that we use
+// across all the projects, init sets up the resize event and kicks off the
+// layoutCanvas function.
+//
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//  Call this to start everything off
+const init = async () => {
+  // Resize the canvas when the window resizes, but only after 100ms of no resizing
+  window.addEventListener('resize', async () => {
+    //  If we do resize though, work out the new size...
+    clearTimeout(resizeTmr)
+    resizeTmr = setTimeout(async () => {
+      await layoutCanvas()
+    }, 100)
+  })
+
+  //  Now layout the canvas
+  await layoutCanvas()
+}
+
+/*
+  This function will set up the canvas to be the correct size and then place it onto the page.
+  It gets called whenever the canvas is resized. The end of this function then calls the
+  drawCanvas function. We should never call the drawCanvas function directly.
+*/
+const layoutCanvas = async (windowObj = window, urlParamsObj = urlParams) => {
+  //  Kill the next animation frame (note, this isn't always used, only if we're animating)
+  windowObj.cancelAnimationFrame(nextFrame)
+
+  //  Get the window size, and devicePixelRatio
+  const { innerWidth: wWidth, innerHeight: wHeight, devicePixelRatio = 1 } = windowObj
+  let dpr = devicePixelRatio
+  let cWidth = wWidth
+  let cHeight = cWidth * ratio
+
+  if (cHeight > wHeight) {
+    cHeight = wHeight
+    cWidth = wHeight / ratio
+  }
+
+  // Grab any canvas elements so we can delete them
+  const canvases = document.getElementsByTagName('canvas')
+  Array.from(canvases).forEach(canvas => canvas.remove())
+
+  // Now set the target width and height
+  let targetHeight = highRes ? 4096 : cHeight
+  let targetWidth = targetHeight / ratio
+
+  //  If the alba params are forcing the width, then use that (only relevant for Alba)
+  if (windowObj.alba?.params?.width) {
+    targetWidth = window.alba.params.width
+    targetHeight = Math.floor(targetWidth * ratio)
+  }
+
+  // If *I* am forcing the width, then use that, and set the dpr to 1
+  // (as we want to render at the exact size)
+  if ('forceWidth' in urlParams) {
+    targetWidth = parseInt(urlParams.forceWidth)
+    targetHeight = Math.floor(targetWidth * ratio)
+    dpr = 1
+  }
+
+  // Update based on the dpr
+  targetWidth *= dpr
+  targetHeight *= dpr
+
+  //  Set the canvas width and height
+  const canvas = document.createElement('canvas')
+  canvas.id = 'target'
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+  document.body.appendChild(canvas)
+
+  canvas.style.position = 'absolute'
+  canvas.style.width = `${cWidth}px`
+  canvas.style.height = `${cHeight}px`
+  canvas.style.left = `${(wWidth - cWidth) / 2}px`
+  canvas.style.top = `${(wHeight - cHeight) / 2}px`
+
+  //  And draw it!!
+  drawCanvas()
+}
+
+//  This allows us to download the canvas as a PNG
+// If we are forcing the id then we add that to the filename
+const autoDownloadCanvas = async () => {
+  const canvas = document.getElementById('target')
+
+  // Create a download link
   const element = document.createElement('a')
-  element.setAttribute('download', `concord_${fxhash}`)
+  const filename = 'forceId' in urlParams
+    ? `${prefix}_${urlParams.forceId.toString().padStart(4, '0')}_${fxhash}`
+    : `${prefix}_${fxhash}`
+  element.setAttribute('download', filename)
+
+  // Hide the link element
   element.style.display = 'none'
   document.body.appendChild(element)
-  let imageBlob = null
-  imageBlob = await new Promise(resolve => document.getElementById('target').toBlob(resolve, 'image/png'))
-  element.setAttribute('href', window.URL.createObjectURL(imageBlob, {
-    type: 'image/png'
-  }))
+
+  // Convert canvas to Blob and set it as the link's href
+  const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+  element.setAttribute('href', window.URL.createObjectURL(imageBlob))
+
+  // Trigger the download
   element.click()
+
+  // Clean up by removing the link element
   document.body.removeChild(element)
-  // If we are dumping outputs then reload the page
+
+  // Reload the page if dumpOutputs is true
   if (dumpOutputs) {
     window.location.reload()
   }
 }
 
+const downloadSVG = async (size) => { // eslint-disable-line no-unused-vars
+  page.wrapSVG(features.allLines, PAPER[size], `${prefix}_lines_${fxhash}`)
+  page.wrapSVG(features.allCircles, PAPER[size], `${prefix}_circles_${fxhash}`)
+  page.wrapSVG(features.allDots, PAPER[size], `${prefix}_dots_${fxhash}`)
+}
+
 //  KEY PRESSED OF DOOM
 document.addEventListener('keypress', async (e) => {
   e = e || window.event
+
+  // == Common controls ==
   // Save
   if (e.key === 's') autoDownloadCanvas()
 
@@ -572,13 +651,22 @@ document.addEventListener('keypress', async (e) => {
     console.log('Highres mode is now', highRes)
     await layoutCanvas()
   }
+
+  // == Custom controls ==
+  // If the numbers 1 to 6 are pressed, then download the SVGs
+  if (e.key === '1') downloadSVG('A1')
+  if (e.key === '2') downloadSVG('A2')
+  if (e.key === '3') downloadSVG('A3')
+  if (e.key === '4') downloadSVG('A4')
+  if (e.key === '5') downloadSVG('A5')
+  if (e.key === '6') downloadSVG('A6')
 })
 
 //  This preloads the images so we can get access to them
 // eslint-disable-next-line no-unused-vars
 const preloadImages = () => {
   //  If paper1 has loaded and we haven't draw anything yet, then kick it all off
-  if (!drawn) {
+  if (!thumbnailTaken) {
     clearInterval(preloadImagesTmr)
     init()
   }

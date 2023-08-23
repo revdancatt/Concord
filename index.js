@@ -387,9 +387,7 @@ const makeFeatures = () => {
     'Line colour': features.lineColour,
     'Circle colour': features.circleColour
   }
-  if (features.allDots.length > 0) {
-    window.$fxhashFeatures['Dot colour'] = features.dotColour
-  }
+  if (features.allDots.length > 0) window.$fxhashFeatures['Dot colour'] = features.dotColour
 
   if (features.totalLines <= 2) window.$fxhashFeatures.Mood = 'Harmony'
   if (features.totalLines === 3) window.$fxhashFeatures.Mood = 'Tranquility'
@@ -484,6 +482,11 @@ const drawCanvas = async () => {
     ctx.stroke()
   })
 
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  //
+  // Below is code that is common to all the projects, there may be some
+  // customisation for animated work or special cases
+
   // Try various methods to tell the parent window that we've drawn something
   if (!thumbnailTaken) {
     try {
@@ -507,6 +510,8 @@ const drawCanvas = async () => {
     //  We should wait for the next animation frame here
     nextFrame = window.requestAnimationFrame(drawCanvas)
   }
+  //
+  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -595,6 +600,16 @@ const layoutCanvas = async (windowObj = window, urlParamsObj = urlParams) => {
   canvas.style.left = `${(wWidth - cWidth) / 2}px`
   canvas.style.top = `${(wHeight - cHeight) / 2}px`
 
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  //
+  // Custom code (for defining textures and buffer canvas goes here) if needed
+  //
+
+  // ...
+
+  //
+  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
   //  And draw it!!
   drawCanvas()
 }
@@ -631,7 +646,7 @@ const autoDownloadCanvas = async () => {
   }
 }
 
-const downloadSVG = async (size) => { // eslint-disable-line no-unused-vars
+const downloadSVG = async (size) => {
   page.wrapSVG(features.allLines, PAPER[size], `${prefix}_lines_${fxhash}`)
   page.wrapSVG(features.allCircles, PAPER[size], `${prefix}_circles_${fxhash}`)
   page.wrapSVG(features.allDots, PAPER[size], `${prefix}_dots_${fxhash}`)

@@ -18,6 +18,19 @@ Concord: "a harmonious state of things in general and of their properties (as of
 **High-res**: where the project lives on my website with high-res outputs  
 **RCS edition**: where the latest updated version of the project lives
 
+## Running
+
+The files you need are...
+
+```
+index.html
+  ╰ index.js
+  ╰ line.js
+  ╰ page.js
+```
+
+...spin up a local webserver or just opening index.html should do the trick, see instructions.md for, well, instructions.
+
 ## Code usage
 
 I've placed the code here for educational purposes, for anyone who wants to learn from _somewhat_ badly written code. You may not sell/mint/etc. outputs from this code, you may keep, print, display them for personal use. Please see the LICENSE for more information.

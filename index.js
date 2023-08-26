@@ -21,7 +21,7 @@
 // These are the generally common values we'll use across our projects
 const ratio = 1.41 // canvas ratio
 const features = {} // A global object to hold all the features we'll use in the draw stage
-let nextFrame = null // requestAnimationFrame, and the ability to clear it
+const nextFrame = null // requestAnimationFrame, and the ability to clear it
 let resizeTmr = null // a timer to make sure we don't resize too often
 let highRes = false // display high or low res
 let thumbnailTaken = false // have we taken a thumbnail yet, so we don't take another
@@ -508,7 +508,7 @@ const drawCanvas = async () => {
     window.parent.postMessage('forceDownloaded', '*')
   } else {
     //  We should wait for the next animation frame here
-    nextFrame = window.requestAnimationFrame(drawCanvas)
+    // nextFrame = window.requestAnimationFrame(drawCanvas)
   }
   //
   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

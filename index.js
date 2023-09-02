@@ -24,6 +24,7 @@ const features = {} // A global object to hold all the features we'll use in the
 const nextFrame = null // requestAnimationFrame, and the ability to clear it
 let resizeTmr = null // a timer to make sure we don't resize too often
 let highRes = false // display high or low res
+let drawStarted = false // Flag if we have kicked off the draw loop
 let thumbnailTaken = false // have we taken a thumbnail yet, so we don't take another
 let forceDownloaded = false // are we forcing a download?
 const urlSearchParams = new URLSearchParams(window.location.search)
@@ -416,6 +417,7 @@ console.table(window.$fxhashFeatures)
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 const drawCanvas = async () => {
+  drawStarted = true
   const canvas = document.getElementById('target')
   const ctx = canvas.getContext('2d')
   if (features.backgroundColour === 'Special' || features.backgroundColour.includes('Gradient')) {
@@ -681,7 +683,7 @@ document.addEventListener('keypress', async (e) => {
 // eslint-disable-next-line no-unused-vars
 const preloadImages = () => {
   //  If paper1 has loaded and we haven't draw anything yet, then kick it all off
-  if (!thumbnailTaken) {
+  if (!drawStarted) {
     clearInterval(preloadImagesTmr)
     init()
   }

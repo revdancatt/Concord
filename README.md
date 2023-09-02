@@ -6,7 +6,7 @@ Combining my love for print and pen plotting, Concord lends itself to both, havi
 
 The idea for Concord was a place of peace and tranquillity. The line represents structure, as though you were in the wilderness or on a strange planet and had found some bamboo-type material to construct a shelter. The circles and semi-circles are balanced, distant moons or suns view from the abode. The smaller dots take their positions in the negative space, placed where other things aren't.
 
-This is a first part of a trilogy with; "a strange and desolate place" and "Maps" being parts two and three.
+This is a first part of a trilogy with; "[a strange and desolate place](https://revdancatt.com/art/a-strange-and-desolate-place-10817)" and "Maps" being parts two and three.
 
 Concord: "a harmonious state of things in general and of their properties (as of colours and sounds); congruity of parts with one another and with the whole."
 

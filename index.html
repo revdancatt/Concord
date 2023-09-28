@@ -3,10 +3,29 @@
 
 <head>
   <title>Concord</title>
+  <!--
+    //
+    //  Concord - revdancatt 25/11/2021
+    //
+    //
+    //  HELLO!! Code is copyright revdancatt (that's me), so no sneaky using it for your
+    //  NFT projects.
+    //  But please feel free to unpick it, and ask me questions. A quick note, this is written
+    //  as an artist, which is a slightly different (and more storytelling way) of writing
+    //  code, than if this was an engineering project. I've tried to keep it somewhat readable
+    //  rather than doing clever shortcuts, that are cool, but harder for people to understand.
+    //
+    //  You can find me at...
+    //  https://twitter.com/revdancatt
+    //  https://instagram.com/revdancatt
+    //  https://youtube.com/revdancatt
+    //
+  -->
   <script id="fxhash-snippet">
+    let search = new URLSearchParams(window.location.search)
     let alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-    var fxhash = new URLSearchParams(window.location.search).get('fxhash')
-    let b58dec = (str) => str.split('').reduce((p, c, i) => p + alphabet.indexOf(c) * (Math.pow(alphabet.length, str.length - i - 1)), 0)
+    var fxhash = search.get('fxhash') || "oo" + Array(49).fill(0).map(_ => alphabet[(Math.random() * alphabet.length) | 0]).join('')
+    let b58dec = str => [...str].reduce((p, c) => p * alphabet.length + alphabet.indexOf(c) | 0, 0)
     let fxhashTrunc = fxhash.slice(2)
     let regex = new RegExp(".{" + ((fxhashTrunc.length / 4) | 0) + "}", 'g')
     let hashes = fxhashTrunc.match(regex).map(h => b58dec(h))
